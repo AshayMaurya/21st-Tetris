@@ -14,8 +14,8 @@ if (typeof web3 !== 'undefined') {
 let from = web3.eth.accounts[0];
 // console.log(from);
 
-
-let source = "pragma solidity ^0.4.0;contract Calc{  /*区块链存储*/  uint count;  /*执行会写入数据，所以需要`transaction`的方式执行。*/ uint result; function add(uint a, uint b) returns(uint){    count++;  result = a + b;  return result;  }  /*执行不会写入数据，所以允许`call`的方式执行。*/  function getCount() constant returns (uint){    return count;  } function getResult() constant returns (uint){ return result; }}";
+// this one.
+// let source = "pragma solidity ^0.4.0;contract Calc{  /*区块链存储*/  uint count;  /*执行会写入数据，所以需要`transaction`的方式执行。*/ uint result; function add(uint a, uint b) returns(uint){    count++;  result = a + b;  return result;  }  /*执行不会写入数据，所以允许`call`的方式执行。*/  function getCount() constant returns (uint){    return count;  } function getResult() constant returns (uint){ return result; }}";
 
 // let source = "pragma solidity ^0.4.0; contract Calc 
 
