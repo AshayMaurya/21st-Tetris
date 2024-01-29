@@ -1,35 +1,74 @@
-import socketio
-import json
+// Import required modules
+let Web3 = require('web3');
+const solc = require('solc');
+const io = require('socket.io-client');
 
-sio = socketio.Server()
+// Connect to the WebSocket server running on localhost:3000 (or your desired server)
+const socket = io('http://localhost:3000');
 
-@sio.event
-def connect(sid, environ):
-    print(f'Client {sid} connected')
+let web3;
 
-@sio.event
-def disconnect(sid):
-    print(f'Client {sid} disconnected')
+// Check if Web3 is already defined (e.g., injected by MetaMask) or use a local provider
+if (typeof web3 !== 'undefined') {
+    web3 = new Web3(web3.currentProvider);
+} else {
+    web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
+}
 
-@sio.event
-def web3Data(sid, data):
-    print('Received web3Data:', data)
-    # Process data as needed
+// Get the account address of the user
+let from = web3.eth.accounts[0];
 
-@sio.event
-def contractHash(sid, data):
-    print('Received contractHash:', data)
-    # Process data as needed
+// Solidity source code for the smart contract
+let source = "pragma solidity ^0.4.0;contract Calc{  uint count; uint result; function add(uint a, uint b) returns(uint){    count++;  result = a + b;  return result;  }  function getCount() constant returns (uint){    return count;  } function getResult() constant returns (uint){ return result; }}";
 
-@sio.event
-def contractAddress(sid, data):
-    print('Received contractAddress:', data)
-    # Process data as needed
+// Compile the smart contract source code
+let calcCompiled = solc.compile(source, 1);
+let abiDefinition = calcCompiled.contracts[':Calc'].interface;
+let deployCode = calcCompiled.contracts[':Calc'].bytecode;
 
-app = socketio.WSGIApp(sio)
+// Get the account address for deployment
+let deployeAddr = web3.eth.accounts[0];
+let calcContract = web3.eth.contract(JSON.parse(abiDefinition));
 
-if __name__ == '__main__':
-    import eventlet
-    import eventlet.wsgi
+// Estimate gas required for contract deployment
+let gasEstimate = web3.eth.estimateGas({ data: deployCode });
+console.log(gasEstimate);
 
-    eventlet.wsgi.server(eventlet.listen(('localhost', 3000)), app)
+// Emit 'web3Data' event to the WebSocket server with relevant information
+socket.emit('web3Data', {
+    abi: JSON.parse(abiDefinition),
+    bytecode: deployCode,
+    gasEstimate: gasEstimate
+});
+
+// Deploy the contract and handle the callback
+let myContractReturned = calcContract.new({
+    data: deployCode,
+    from: deployeAddr,
+    gas: gasEstimate
+}, function(err, myContract) {
+    console.log("+++++");
+    if (!err) {
+        if (!myContract.address) {
+            // If contract deployment is in progress, emit 'contractHash' event
+            console.log("Contract deploy transaction hash: " + myContract.transactionHash);
+            socket.emit('contractHash', { transactionHash: myContract.transactionHash });
+        } else {
+            // If contract deployment is successful, emit 'contractAddress' event
+            console.log("Contract deploy address: " + myContract.address);
+            socket.emit('contractAddress', { contractAddress: myContract.address });
+
+            // Send a transaction to the deployed contract function 'add'
+            myContract.add.sendTransaction(1, 2, {
+                from: deployeAddr
+            });
+
+            // Call the 'getCount' and 'getResult' functions of the deployed contract
+            console.log("After contract deploy, call getCount: " + myContract.getCount.call());
+            console.log("Result: " + myContract.getResult.call());
+        }
+    } else {
+        // Handle deployment error
+        console.log(err);
+    }
+});
