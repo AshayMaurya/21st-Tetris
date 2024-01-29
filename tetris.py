@@ -1,8 +1,7 @@
 from settings import *
 import math
-from tetromino import Tetromino
+from tetromino import Tetromino # behaviours for blocks
 import pygame.freetype as ft
-
 
 class Text:
     def __init__(self, app):
@@ -10,11 +9,13 @@ class Text:
         self.font = ft.Font(FONT_PATH)
 
     def get_color(self):
+        # Generate a color based on time using a sine function
         time = pg.time.get_ticks() * 0.001
         n_sin = lambda t: (math.sin(t) * 0.5 + 0.5) * 255
         return n_sin(time * 0.5), n_sin(time * 0.2), n_sin(time * 0.9)
 
     def draw(self):
+        # Render text to display the Tetris title, 'next', 'score', and the current score
         self.font.render_to(self.app.screen, (WIN_W * 0.595, WIN_H * 0.02),
                             text='TETRIS', fgcolor=self.get_color(),
                             size=TILE_SIZE * 1.65, bgcolor='black')
@@ -27,7 +28,6 @@ class Text:
         self.font.render_to(self.app.screen, (WIN_W * 0.64, WIN_H * 0.8),
                             text=f'{self.app.tetris.score}', fgcolor='white',
                             size=TILE_SIZE * 1.8)
-
 
 class Tetris:
     def __init__(self, app):
@@ -43,10 +43,12 @@ class Tetris:
         self.points_per_lines = {0: 0, 1: 100, 2: 300, 3: 700, 4: 1500}
 
     def get_score(self):
+        # Update the score based on the number of cleared lines
         self.score += self.points_per_lines[self.full_lines]
         self.full_lines = 0
 
     def check_full_lines(self):
+        # Check for and remove full lines, updating the score accordingly
         row = FIELD_H - 1
         for y in range(FIELD_H - 1, -1, -1):
             for x in range(FIELD_W):
@@ -65,22 +67,26 @@ class Tetris:
                 self.full_lines += 1
 
     def put_tetromino_blocks_in_array(self):
+        # Update the field array with the positions of Tetromino blocks
         for block in self.tetromino.blocks:
             x, y = int(block.pos.x), int(block.pos.y)
             self.field_array[y][x] = block
 
     def get_field_array(self):
+        # Initialize an empty field array
         return [[0 for x in range(FIELD_W)] for y in range(FIELD_H)]
 
     def is_game_over(self):
+        # Check if the game is over (Tetromino has reached the top of the screen)
         if self.tetromino.blocks[0].pos.y == INIT_POS_OFFSET[1]:
             pg.time.wait(300)
             return True
 
     def check_tetromino_landing(self):
+        # Check if the Tetromino has landed and update the game state accordingly
         if self.tetromino.landing:
             if self.is_game_over():
-                self.__init__(self.app)
+                self.__init__(self.app)  # Restart the game if it's over
             else:
                 self.speed_up = False
                 self.put_tetromino_blocks_in_array()
@@ -89,6 +95,7 @@ class Tetris:
                 self.next_tetromino = Tetromino(self, current=False)
 
     def control(self, pressed_key):
+        # Handle user input to control the Tetromino
         if pressed_key == pg.K_LEFT:
             self.tetromino.move(direction='left')
         elif pressed_key == pg.K_RIGHT:
@@ -99,12 +106,14 @@ class Tetris:
             self.speed_up = True
 
     def draw_grid(self):
+        # Draw the grid on the game field
         for x in range(FIELD_W):
             for y in range(FIELD_H):
                 pg.draw.rect(self.app.screen, 'black',
                              (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE), 1)
 
     def update(self):
+        # Update the game state based on trigger events and Tetromino movement
         trigger = [self.app.anim_trigger, self.app.fast_anim_trigger][self.speed_up]
         if trigger:
             self.check_full_lines()
@@ -114,18 +123,6 @@ class Tetris:
         self.sprite_group.update()
 
     def draw(self):
+        # Draw the grid, Tetromino blocks, and update the display
         self.draw_grid()
         self.sprite_group.draw(self.app.screen)
-
-
-
-
-
-
-
-
-
-
-
-
-
