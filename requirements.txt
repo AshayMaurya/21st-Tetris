@@ -1,3 +1,5 @@
 pygame
+python-socketio>=5.0.4
+eventlet>=0.31.0
 
 
