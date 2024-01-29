@@ -1,63 +1,35 @@
-// var Web3 = require('web3');
+import socketio
+import json
 
-let Web3 = require('web3');
-let web3;
-const solc = require('solc')
+sio = socketio.Server()
 
-if (typeof web3 !== 'undefined') {
-    web3 = new Web3(web3.currentProvider);
-} else {
-    // set the provider you want from Web3.providers
-    web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
-}
+@sio.event
+def connect(sid, environ):
+    print(f'Client {sid} connected')
 
-let from = web3.eth.accounts[0];
-// console.log(from);
+@sio.event
+def disconnect(sid):
+    print(f'Client {sid} disconnected')
 
-// this one.
-// let source = "pragma solidity ^0.4.0;contract Calc{  /*区块链存储*/  uint count;  /*执行会写入数据，所以需要`transaction`的方式执行。*/ uint result; function add(uint a, uint b) returns(uint){    count++;  result = a + b;  return result;  }  /*执行不会写入数据，所以允许`call`的方式执行。*/  function getCount() constant returns (uint){    return count;  } function getResult() constant returns (uint){ return result; }}";
+@sio.event
+def web3Data(sid, data):
+    print('Received web3Data:', data)
+    # Process data as needed
 
-// let source = "pragma solidity ^0.4.0; contract Calc 
+@sio.event
+def contractHash(sid, data):
+    print('Received contractHash:', data)
+    # Process data as needed
 
+@sio.event
+def contractAddress(sid, data):
+    print('Received contractAddress:', data)
+    # Process data as needed
 
-let abiDefinition = calcCompiled.contracts['main:Calc'].interface;
+app = socketio.WSGIApp(sio)
 
+if __name__ == '__main__':
+    import eventlet
+    import eventlet.wsgi
 
-let deployCode = calcCompiled.contracts['main:Calc'].bytecode;
-
-let deployeAddr = web3.eth.accounts[0];
-let calcContract = web3.eth.contract(JSON.parse(abiDefinition));
-
-
-let gasEstimate = web3.eth.estimateGas({ data: deployCode });
-console.log(gasEstimate);
-
-let myContractReturned = calcContract.new({
-    data: deployCode,
-    from: deployeAddr,
-    gas: gasEstimate
-}, function(err, myContract) {
-    console.log("+++++");
-    if (!err) {
-  
-        if (!myContract.address) {
-            console.log("contract deploy transaction hash: " + myContract.transactionHash) 
-
-            
-        } else {
-            console.log("contract deploy address: " + myContract.address) 
-
-           
-            myContract.add.sendTransaction(1, 2, {
-                from: deployeAddr
-            });
-
-            console.log("after contract deploy, call:" + myContract.getCount.call());
-            console.log("result:" + myContract.getResult.call());
-        }
-
-    } else {
-        console.log(err);
-    }
-});
-
+    eventlet.wsgi.server(eventlet.listen(('localhost', 3000)), app)
