@@ -1,6 +1,6 @@
 from settings import *
 import random
-
+# 2 classes used, Block and Tetromino
 class Block(pg.sprite.Sprite):
     def __init__(self, tetromino, pos):
         # Initialize a block within a tetromino
